@@ -24,7 +24,7 @@ function createMainWindow() {
   });
 
   // mainWindow.loadURL(startUrl);
-  mainWindow.loadURL(`http://localhost:${process.env.FRONTEND_PORT}`);
+  mainWindow.loadURL(`http://localhost:3000`);
   mainWindow.webContents.openDevTools();
 }
 
