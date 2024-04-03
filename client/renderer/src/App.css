@@ -47,8 +47,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-}
+  justify-content: start;
+  }
 
 /* #getMoviesBtn{
   margin:auto;
@@ -105,6 +105,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-top: 20vh;
 }
 input.searchInput {
   height: 2rem;
@@ -117,3 +118,34 @@ input.searchInput {
 .iconView{
   cursor: pointer ;
 }
+.mainMovieScreen {
+  padding: 2rem;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  /* align-content: center; */
+  justify-content: flex-start;
+  align-items: flex-start;
+}
+.navigationbar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+}
+.icon {
+  margin-right: 1rem;
+  /* width: 2rem; */
+  /* height: 2rem; */
+  display: flex;
+  border: 0.1rem solid;
+  border-radius: 1rem;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+.navhead {
+  font-size: 1.3rem;
+}
+
