@@ -11,4 +11,5 @@ func ContentRouter(app *fiber.App) {
 	app.Get("/download/:fileId/:n",controllers.GetChunk)
 	app.Get("/download/:fileId",controllers.GetAllChunks)
 	app.Get("/getAllfiles",controllers.GetAllFiles)
+	app.Get("/", controllers.TestRoute)
 }

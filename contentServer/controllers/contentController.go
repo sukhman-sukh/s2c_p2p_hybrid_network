@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
@@ -26,10 +27,10 @@ type gridFSFile struct {
 }
 
 type gridFSChunk struct {
-	ID       primitive.ObjectID `bson:"_id"`
-	FilesID  primitive.ObjectID `bson:"files_id"`
-	N        int32              `bson:"n"`
-	Data     []byte             `bson:"data"`
+	ID      primitive.ObjectID `bson:"_id"`
+	FilesID primitive.ObjectID `bson:"files_id"`
+	N       int32              `bson:"n"`
+	Data    []byte             `bson:"data"`
 }
 
 func UploadFile(c *fiber.Ctx) error {
@@ -108,31 +109,37 @@ func GetAllFiles(c *fiber.Ctx) error {
 }
 
 func GetChunk(c *fiber.Ctx) error {
-    id := c.Params("fileId")
-    n := c.Params("n")
-    objectID, err := primitive.ObjectIDFromHex(id)
-    if err != nil {
-        return err
-    }
+	id := c.Params("fileId")
+	n := c.Params("n")
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
 
-    bucket := configs.Bucket
-    cursor, err := bucket.GetChunksCollection().Find(context.Background(), bson.D{{"files_id", objectID}, {"n", n}})
-    if err != nil {
-        fmt.Println("Error finding chunk:", err)
-        return c.Status(http.StatusInternalServerError).JSON(responses.Response{Status: http.StatusInternalServerError, Message: "Internal Server Error"})
-    }
-    defer cursor.Close(context.Background())
+	bucket := configs.Bucket
+	cursor, err := bucket.GetChunksCollection().Find(context.Background(), bson.D{{"files_id", objectID}, {"n", n}})
+	if err != nil {
+		fmt.Println("Error finding chunk:", err)
+		return c.Status(http.StatusInternalServerError).JSON(responses.Response{Status: http.StatusInternalServerError, Message: "Internal Server Error"})
+	}
+	defer cursor.Close(context.Background())
 	fmt.Println(cursor)
-    var foundChunk gridFSChunk
-    if err := cursor.Decode(&foundChunk); err != nil {
-        if err == mongo.ErrNoDocuments {
-            fmt.Println("Chunk not found:", err)
-            return c.Status(http.StatusNotFound).JSON(responses.Response{Status: http.StatusNotFound, Message: "Chunk Not Found"})
-        }
-        fmt.Println("Error decoding chunk:", err)
-        return c.Status(http.StatusInternalServerError).JSON(responses.Response{Status: http.StatusInternalServerError, Message: "Internal Server Error"})
-    }
+	var foundChunk gridFSChunk
+	if err := cursor.Decode(&foundChunk); err != nil {
+		if err == mongo.ErrNoDocuments {
+			fmt.Println("Chunk not found:", err)
+			return c.Status(http.StatusNotFound).JSON(responses.Response{Status: http.StatusNotFound, Message: "Chunk Not Found"})
+		}
+		fmt.Println("Error decoding chunk:", err)
+		return c.Status(http.StatusInternalServerError).JSON(responses.Response{Status: http.StatusInternalServerError, Message: "Internal Server Error"})
+	}
 
-    return c.Status(http.StatusOK).JSON(responses.Response{Status: http.StatusOK, Message: "Success", Data: &fiber.Map{"chunk": foundChunk}})
+	return c.Status(http.StatusOK).JSON(responses.Response{Status: http.StatusOK, Message: "Success", Data: &fiber.Map{"chunk": foundChunk}})
 }
 
+func TestRoute(c *fiber.Ctx) error {
+	fmt.Println("Test Route")
+	time.Sleep(5 * time.Second)
+	return c.Status(http.StatusOK).JSON(responses.Response{Status: http.StatusOK, Message: "Success", Data: &fiber.Map{"files": "foundFiles"}})
+
+}
