@@ -15,11 +15,6 @@ io.on('connection', socket => {
     socket.on('join', () => {
         socketIds.push(socket.id)
         console.log("socketIds",socketIds)
-        const otherUser = socketIds.find(id => id !== socket.id);
-        if(otherUser){
-            socket.emit("other-user", otherUser);
-            socket.to(otherUser).emit("user joined", socket.id);
-        }
     });
 
     socket.on('offer', payload => {
@@ -41,7 +36,10 @@ io.on('connection', socket => {
     }
     */
     socket.on('getChunk',(data)=>{
-        socket.broadcast.emit('sendChunk',data)
+        const otherUser = socketIds.find(id => id != data.target);
+        socket.to(otherUser).emit('sendChunk',data)
+        console.log(otherUser)
+        // socket.broadcast.emit('sendChunk',data)
     })
 
     socket.on('disconnect', () => {
