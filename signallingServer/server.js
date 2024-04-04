@@ -33,13 +33,18 @@ io.on('connection', socket => {
     data = {
         target:socketId,
         chunkId:string
+
     }
     */
-    socket.on('getChunk',(data)=>{
-        const otherUser = socketIds.find(id => id != data.target);
-        socket.to(otherUser).emit('sendChunk',data)
-        console.log(otherUser)
-        // socket.broadcast.emit('sendChunk',data)
+    socket.on('getChunks',(data)=>{
+        for(let i=0;i<11;i++){
+            const newPayload = {
+                fileID:data.fileID,
+                requesterID:data.requesterID,
+                chunkId:i,
+            }
+            socket.broadcast.emit('sendChunks',newPayload)
+        }
     })
 
     socket.on('disconnect', () => {
