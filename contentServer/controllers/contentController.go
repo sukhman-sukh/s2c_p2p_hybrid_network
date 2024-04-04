@@ -5,11 +5,12 @@ import (
 	"contentServer/responses"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -18,14 +19,24 @@ func UploadFile(c *fiber.Ctx) error {
 
 	bucket := configs.CreateBucket(configs.DB, "fs")
 	file, err := os.Open(pathfile)
-
 	if err != nil {
 		panic(err)
 	}
+	defer file.Close()
 
-	uploadOPts := options.GridFSUpload().SetMetadata((bson.D{{"metadata tag", "first"}}))
+	fileInfo, err := file.Stat()
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	objectID, err := bucket.UploadFromStream("file", io.Reader(file), uploadOPts)
+	fileSize := fileInfo.Size()
+	numChunks := 10
+	chunkSize := fileSize / int64(numChunks)
+
+	uploadOPts := options.GridFSUpload().SetChunkSizeBytes(int32(chunkSize))
+
+
+	objectID, err := bucket.UploadFromStream(fileInfo.Name(), io.Reader(file), uploadOPts)
 	if err != nil {
 		panic(err)
 	}
@@ -35,15 +46,26 @@ func UploadFile(c *fiber.Ctx) error {
 }
 
 func DownloadFile(c *fiber.Ctx) error {
-	objectID := c.Params("id")
-	bucket := configs.CreateBucket(configs.DB, "fs")
+	id := c.Params("id")
+	objectID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return err
+	}
+	bucket := configs.Bucket
 	file, err := bucket.OpenDownloadStream(objectID)
 	if err != nil {
-		panic(err)
+		fmt.Println("Error opening download stream:", err)
+		return err
 	}
 	defer file.Close()
-	c.Response().Header.Set("Content-Disposition", "attachment; filename="+objectID)
+
+	c.Response().Header.Set("Content-Disposition", "attachment; filename="+id)
 	c.Response().Header.Set("Content-Type", "application/octet-stream")
-	c.SendStream(file)
+
+	if _, err := io.Copy(c, file); err != nil {
+		fmt.Println("Error sending file:", err)
+		return err
+	}
+
 	return nil
 }

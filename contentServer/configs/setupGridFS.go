@@ -13,3 +13,5 @@ func CreateBucket (client *mongo.Client,bucketName string) *gridfs.Bucket {
 	}
 	return bucket
 }
+
+var Bucket *gridfs.Bucket = CreateBucket(DB,"fs")

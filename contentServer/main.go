@@ -1,11 +1,13 @@
 package main
 
 import (
-    "contentServer/configs"
-    "contentServer/routes"
-    "net"
-    "sync"
-    "github.com/gofiber/fiber/v2"
+	"contentServer/configs"
+	"contentServer/routes"
+	"fmt"
+	"net"
+	"sync"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type connTracker struct {
@@ -13,7 +15,7 @@ type connTracker struct {
     conns int
     mu    sync.Mutex
 }
-
+//TODO check if this counts the mnumber of users connected
 func (t *connTracker) Accept() (net.Conn, error) {
     conn, err := t.Listener.Accept()
     if err != nil {
@@ -42,6 +44,7 @@ func main() {
                 // handle error
             }
             go func(c net.Conn) {
+                fmt.Println(tln.conns)
                 // handle connection
                 tln.mu.Lock()
                 if tln.conns > 20 {
