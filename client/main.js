@@ -40,7 +40,6 @@ app.on('window-all-closed', () => {
 });
 ipcMain.on('chunk_share', (event, videoData) => {
   console.log('File data',typeof(videoData));
-  console.log('File data',videoData);
   console.log(videoData?.videoID)
 
 
@@ -50,8 +49,8 @@ ipcMain.on('chunk_share', (event, videoData) => {
   videoData?.chunkData?.map((chunk)=>{
     string+=chunk.Data
     counter++
+    console.log(counter,chunk.chunkId)
   })
-  console.log(string,counter)
 
   function base64ToBinary(base64String, filePath) {
     // const base64Data = base64String.replace(/^data:image\/\w+;base64,/, '');

@@ -8,10 +8,12 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import HomePage from './components/HomePage';
 import MoviePage from './components/MoviePage';
+import useChunkMapStore from './store/chunkMapStore';
 function App() {
 
 
-  const [chunkMap, setChunkMap] = useState(new Map());
+  // const [chunkMap, setChunkMap] = useState();
+  let chunkMap
   const [videoIdToDownlaod, setVideoIdToDownlaod] = useState("");
   const [moviesList, setMoviesList] = useState();
 
@@ -21,6 +23,7 @@ function App() {
   const otherUser = useRef();
   const dataChannel = useRef();
 
+  const chunkMapStore = useChunkMapStore()
 
   useEffect(() => {
     socketRef.current = io.connect("http://10.61.118.201:9000");
@@ -37,14 +40,20 @@ function App() {
   function handleChunkRequest(data) {
     console.log("requested data for chunk", data)
     let chunk;
-    chunkMap.get(data.fileID).forEach(chunkInMap => { if (chunkInMap.id === data.chunkID) { chunk = chunkInMap } })
+    console.log(chunkMap)
+    const map = new Map(JSON.parse(localStorage.myMap));
+    console.log("MAP",map)
+    const Array = map.get(data.fileID)
+    for(let i = 0; i < 11; i++){
+      if(data.chunkId == Array[i].N) chunk = Array[i]
+    }
     if (chunk) {
       const response = {
         chunk: chunk,
-        videoID: data.videoID
+        videoID: data.fileID
       }
       console.log("chunk found")
-      const channel = callUser(data.target)
+      const channel = callUser(data.requesterID)
       channel.onopen = () => {
         channel.send(JSON.stringify(response))
         console.log("chunk sent")
@@ -74,7 +83,16 @@ function App() {
     peerRef.current = CreateRTCPeerConnection();
     peerRef.current.ondatachannel = e => {
       dataChannel.current = e.channel;
-      dataChannel.current.onmessage = a => { console.log(a.data) };
+      dataChannel.current.onmessage = a => { 
+        console.log("LINE 83",a.data);
+        const data = JSON.parse(a.data)
+        const videoData = {
+          videoID:data.videoID,
+          chunkData:[data.chunk]
+        }
+        window.ipcRenderer.send("chunk_share",videoData)
+        dataChannel.current.close() 
+      };
       console.log("Connection established")
     }
     const desc = new RTCSessionDescription(incoming.sdp)
@@ -113,10 +131,11 @@ function App() {
     dataChannel.current = peerRef.current.createDataChannel("channel");
     dataChannel.current.onopen = () => { console.log("data channel open") }
     dataChannel.current.onmessage = a => {
+      console.log("call user datachannel")
       //TODO:store this data locally
       if (videoIdToDownlaod.length > 0) {
         try {
-          if (chunkMap.get(videoIdToDownlaod).length === 10){
+          if (chunkMap.get(videoIdToDownlaod).length === 11){
 
             console.log("downloading")
             const videoData={
@@ -183,7 +202,7 @@ function App() {
             element={
               <HomePage
                 chunkMap={chunkMap}
-                setChunkMap={setChunkMap}
+                // setChunkMap={setChunkMap}
                 moviesList={moviesList}
                 setMoviesList={setMoviesList}
               />
@@ -194,7 +213,7 @@ function App() {
             element={
               <MoviePage
                 chunkMap={chunkMap}
-                setChunkMap={setChunkMap}
+                // setChunkMap={setChunkMap}
                 requestPacket={requestPacket}
                 socketRef={socketRef}
                 moviesList={moviesList}

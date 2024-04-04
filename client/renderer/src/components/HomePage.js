@@ -9,18 +9,18 @@ function HomePage({ chunkMap, setChunkMap, moviesList, setMoviesList }) {
     const [search, setSearch] = useState("")
 
     useEffect(() => {
-        const newChunkMap = new Map(chunkMap)
-        newChunkMap.set("Movie1", [
-            { id: 1, chunk: "chunk1" },
-            { id: 2, chunk: "chunk2" },
-            { id: 3, chunk: "chunk3" }
-        ])
-        newChunkMap.set("Movie2", [
-            { id: 4, chunk: "chunk1" },
-            { id: 5, chunk: "chunk2" },
-            { id: 6, chunk: "chunk3" }
-        ],)
-        setChunkMap(newChunkMap)
+        // const newChunkMap = new Map(chunkMap)
+        // newChunkMap.set("Movie1", [
+        //     { id: 1, chunk: "chunk1" },
+        //     { id: 2, chunk: "chunk2" },
+        //     { id: 3, chunk: "chunk3" }
+        // ])
+        // newChunkMap.set("Movie2", [
+        //     { id: 4, chunk: "chunk1" },
+        //     { id: 5, chunk: "chunk2" },
+        //     { id: 6, chunk: "chunk3" }
+        // ],)
+        // setChunkMap(newChunkMap)
     }, [])
     useEffect(() => {
         // window.ipcRenderer.send("chunk_share", chunkMap.get("Movie1"))
@@ -34,7 +34,7 @@ function HomePage({ chunkMap, setChunkMap, moviesList, setMoviesList }) {
 
     const getMoviesFromApi = async () => {
         await axios
-            .get('http://10.61.118.201:4000/getAllFiles')
+            .get('http://10.61.23.100:4000/getAllFiles')
             .then((response) => response.data)
             .then((data) => {
                 console.log("got data", data, data.data['files'])
