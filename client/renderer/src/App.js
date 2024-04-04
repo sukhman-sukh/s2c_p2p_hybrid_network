@@ -2,10 +2,15 @@ import logo from './logo.svg';
 import './App.css';
 import React, { useEffect,useRef } from 'react';
 import io from "socket.io-client"
+import { ipcRenderer } from 'electron';
 
 function App() {
 
 
+  
+  const getData = () => {
+    window.Electron.ipcRenderer.send('get_data', { product: 'notebook' });
+  };
   const peerRef = useRef();
   const socketRef = useRef();
   const otherUser = useRef();
@@ -131,14 +136,7 @@ function App() {
         <p>
           Edit <code>src/App.js</code> and save to reload.
         </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        <button onClick={getData}>Getdata</button>
       </header>
     </div>
   );

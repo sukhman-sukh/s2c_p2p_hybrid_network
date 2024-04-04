@@ -1,6 +1,7 @@
 require('dotenv').config();
 const { app, BrowserWindow, dialog, ipcMain } = require('electron');
 const path = require('path');
+const fs = require('fs')
 const url = require('url');
 
 let mainWindow;
@@ -36,4 +37,15 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+ipcMain.on('get_data', (event, arg) => {
+  // fs.readFile("/home/arshdeep/Desktop/sdshackathon24/webrtc/client/renderer/src/App.js", (error, data) => {
+  //   // Do something with file contents
+
+  //   // Send result back to renderer process
+  //   mainWindow.webContents.send("fromMain", responseObj);
+  // });
+  console.log("called")
+
 });
