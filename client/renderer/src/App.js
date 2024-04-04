@@ -1,52 +1,87 @@
 import logo from './logo.svg';
 import './App.css';
-import React, { useEffect,useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import io from "socket.io-client"
 
 function App() {
 
+  const packetMap = [
+    {
+      id: 0,
+      data: "Hello"
+    },
+    {
+      id: 1,
+      data: "World"
+    },
+    {
+      id: 3,
+      data: "a"
+    },
+    {
+      id: 4,
+      data: "packet"
+    },
+    {
+      id: 7,
+      data: "packet"
+    },
+    {
+      id: 8,
+      data: "I am"
+    },
+    {
+      id: 9,
+      data: "a"
+    },
+  ]
 
   const peerRef = useRef();
   const socketRef = useRef();
   const otherUser = useRef();
   const dataChannel = useRef();
 
+
   useEffect(() => {
     socketRef.current = io.connect("http://localhost:9000");
-    socketRef.current.emit("join")
-    socketRef.current.on("other-user", userId => {
-      console.log("other user", userId)
-      callUser(userId);
-      otherUser.current = userId;
-    });
-    socketRef.current.on("user joined",userID=>{
-      otherUser.current = userID
+    socketRef.current.on("connect", () => {
+      console.log("socket id", socketRef.current.id)
     })
+    socketRef.current.emit("join")
     socketRef.current.on("offer", handleOffer)
     socketRef.current.on("answer", handleAnswer)
     socketRef.current.on("ice-candidate", handleCandidate)
-
-    socketRef.current.on("sendChunk",data=>{
-      console.log("requested data for chunk",data.chunkId)
-      //find locally if the chunk exists or not
-      //if it exists send it
-    })
+    socketRef.current.on("sendChunk", handleChunkRequest)
   }, [])
+
+  function handleChunkRequest(data) {
+    console.log("requested data for chunk", data.chunkId)
+    const chunk = packetMap.find(e => e.id === data.chunkId)
+    if (chunk) {
+      console.log("chunk found")
+      const channel = callUser(data.target)
+      channel.onopen = ()=>{
+        channel.send(JSON.stringify(chunk))
+        console.log("chunk sent")
+      }
+    } else {
+      console.log("chunk not found")
+    }
+  }
 
   function CreateRTCPeerConnection(userID) {
     const peer = new RTCPeerConnection({
       iceServers: [
         { urls: 'stun:stun.l.google.com:19302' },
         {
-          urls: 'turn:turn.bistri.com:80',
-          credential: 'homeo',
-          username: 'homeo'
+          urls: "turn:localhost:3478",
+          username: "myTurnServer",
+          credential: "1234"
         }
       ]
     });
 
     peer.onicecandidate = handleICECandidateEvent;
-    peer.onnegotiationneeded = () => handleNegotiationNeededEvent(userID);
     return peer;
   }
 
@@ -72,20 +107,6 @@ function App() {
     })
   }
 
-  function handleNegotiationNeededEvent (userID){
-    peerRef.current.createOffer().then(offer=>{
-      return peerRef.current.setLocalDescription(offer)
-    })
-    .then(()=>{
-      const payload = {
-        target:userID,
-        caller:socketRef.current.id,
-        sdp:peerRef.current.localDescription
-      }
-      socketRef.current.emit("offer",payload)
-    })
-  }
-
   function handleICECandidateEvent(e) {
     console.log("new ICE candidate , SDP", JSON.stringify(peerRef.current.localDescription))
     if (e.candidate) {
@@ -102,10 +123,14 @@ function App() {
     peerRef.current.setRemoteDescription(desc).catch(e => console.log("ERROR HANDLING ANSWER", e))
   }
   function callUser(userID) {
+    otherUser.current = userID;
     peerRef.current = CreateRTCPeerConnection(userID);
     dataChannel.current = peerRef.current.createDataChannel("channel");
     dataChannel.current.onopen = () => { console.log("data channel open") }
-    dataChannel.current.onmessage = a => { console.log("Message recieved", a.data) };
+    dataChannel.current.onmessage = a => {
+      //TODO:store this data locally
+      console.log("data received", a.data)
+    };
     dataChannel.current.onclose = () => console.log("data channel closed")
     peerRef.current.createOffer().then(offer => {
       return peerRef.current.setLocalDescription(offer);
@@ -117,29 +142,34 @@ function App() {
       }
       socketRef.current.emit("offer", payload)
     })
+    return dataChannel.current;
   }
 
-  function handleCandidate(incoming){
+  function handleCandidate(incoming) {
     const candidate = new RTCIceCandidate(incoming);
-    peerRef.current.addIceCandidate(candidate).catch(e=>console.log(e))
+    peerRef.current.addIceCandidate(candidate).catch(e => console.log(e))
+  }
+
+  function requestPacket(chunkId) {
+    const payload = {
+      target: socketRef.current.id,
+      chunkId: chunkId
+    }
+    console.log("requesting packet", payload)
+    socketRef.current.emit("getChunk", payload)
   }
 
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+
+      <h1>{socketRef.current?.id}</h1>
+      <ul>
+        {Array.from({ length: 10 }, (_, i) => (
+          <li key={i}>
+            <button onClick={() => requestPacket(i)}>Packet {i}</button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
