@@ -12,4 +12,5 @@ func ContentRouter(app *fiber.App) {
 	app.Get("/download/:id",controllers.DownloadFile)//download/fileid/:id
 	//download/fileid --> will download the entire file
 	//getAllfiles --> will return all the files in the database
+	app.Get("/getAllfiles",controllers.GetAllFiles)
 }
